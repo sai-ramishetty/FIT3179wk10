@@ -1,47 +1,68 @@
 {
-    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-    "description": "Interactive Pie Chart of Australian Electricity Generation by Source",
-    "width": 500,
-    "height": 500,
-    "data": {
-      "url": "https://raw.githubusercontent.com/sairamishetty/FIT3179A2/refs/heads/main/piedata.json"
-    },
-    "params": [
-      {
-        "name": "year_selection",
-        "value": 2022,
-        "bind": {
-          "input": "range",
-          "min": 2000,
-          "max": 2022,
-          "step": 1,
-          "name": "Year",
-          "labelColor": "black"
-        }
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A proportion usuage for each electricity type",
+  "title": "Proportion usuage for each electricity type",
+  "width": 600,
+  "height": 600,
+  "data": {
+    "url": "https://raw.githubusercontent.com/sairamishetty/FIT3179A2/refs/heads/main/piedata.json"
+  },
+  "params": [
+    {
+      "name": "Year",
+      "value": 2000,
+      "bind": {
+        "input": "range",
+        "min": 2000,
+        "max": 2022,
+        "step": 1,
+        "name": "Select Year: "
       }
-    ],
-    "transform": [
-      {"filter": "datum.Year == year_selection"},
-      {"filter": "datum.Value > 0"}
-    ],
-    "mark": {"type": "arc", "tooltip": true, "outerRadius": 180},
-    "encoding": {
-      "theta": {"field": "Value", "type": "quantitative", "stack": true},
-      "color": {
-        "field": "electricityType",
-        "type": "nominal",
-        "scale": {
-          "domain": ["Coal", "Natural Gas", "Oil", "Solar PV", "Wind", "Hydro", "Biofuels","Geothermal"],
-          "range": ["#484030", "#a3b8c8", "#a14242", "#ffff00", "#7fb5b0", "#1a4f76", "#606C38", "#a35e55"]
-        
-        }
-      },
-      "tooltip": [
-        {"field": "electricityType", "type": "nominal", "title": "Energy Source"},
-        {"field": "Value", "type": "quantitative", "title": "Generation (GWh)"},
-        {"field": "Year", "type": "ordinal", "title": "Year"}
-      ],
-      "order": {"field": "Value", "type": "quantitative", "sort": "descending"}
+    }
+  ],
+  "transform": [
+    {"filter": "datum.Year == Year"},
+    {
+      "window": [{"op": "sum", "field": "Value", "as": "TotalValue"}],
+      "frame": [null, null]
     },
-    "view": {"stroke": null}
-  }
+    {
+      "calculate": "datum.Value / datum.TotalValue * 100",
+      "as": "Percentage"
+    },
+    {
+      "calculate": "datum.electricityType == 'Coal' ? datum.electricityType + ' (' + format(datum.Percentage, '.2f') + '%)' : datum.electricityType",
+      "as": "LabelWithPercentage"
+    },
+    {
+      "filter": "datum.Percentage >= 1"
+    }
+  ],
+  "encoding": {
+    "theta": {"field": "Value", "type": "quantitative", "stack": true},
+    "color": {
+      "field": "electricityType",
+      "type": "nominal",
+      "scale": {
+        "domain": ["Coal", "Natural Gas", "Hydro", "Geothermal", "Solar PV", "Wind", "Biofuels", "Oil"]
+      }
+     
+    },
+    "tooltip": [
+      {"field": "electricityType", "type": "nominal", "title": "Electricity Type"},
+     
+      {"field": "Percentage", "type": "quantitative", "title": "Usage (%)", "format": ".2f"}
+    ]
+  },
+  "layer": [
+    {
+      "mark": {"type": "arc", "outerRadius": 170}
+    },
+    {
+      "mark": {"type": "text", "radius": 200, "fontSize": 11},
+      "encoding": {
+        "text": {"field": "LabelWithPercentage"}
+      }
+    }
+  ]
+}
